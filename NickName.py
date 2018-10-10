@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkcalendar import Calendar, DateEntry
 import collections
 import numpy as np
+from difflib import SequenceMatcher
 
 #pip install tkcalendar
 
@@ -19,6 +20,8 @@ def mainfun():
     full_name(v1.get(), root)
 
 
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 
 def full_name(nickname, root):
@@ -30,11 +33,12 @@ def full_name(nickname, root):
         # split on tab so that we get lists from strings
         A = [cl.split('\t') for cl in clean_lines]
         Lb1.delete(0,tk.END)
-        Lb1.insert(1, nickname)
+        #Lb1.insert(1, nickname)
         for item in A:
-            if item[0].lower() == nickname.lower():
+            if item[0].lower().strip() == nickname.lower().strip():
                 print(item[1])
-                Lb1.insert(1, item[1].lower())
+                data_check(item[1], v3.get())
+                #Lb1.insert(1, item[1].lower())
 
         # get lists of ints instead of lists of strings
         #X = [map(int, row[0:6]) for row in A]
@@ -52,6 +56,23 @@ def full_name(nickname, root):
     #     print(item[0])
     # print(len(names))
     #return names[nickname][weighted_choice_sub([x[1] for x in names[nickname]])][0]
+
+def data_check(matchname, postcode):
+    global Lb1
+    with open("Data.csv", 'r') as fin:
+        lines = fin.readlines()
+        # remove '\n' characters
+        clean_lines = [l.strip('\n') for l in lines]
+        # split on tab so that we get lists from strings
+        A = [cl.split(',') for cl in clean_lines]
+        for item in A:
+            if item[0].lower().strip() == postcode.lower().strip():
+                print("post code matched")
+                print(matchname.lower())
+                print(item[2].lower().strip())
+                if similar(item[2].lower().strip(),matchname.lower().strip()) > 0.9:
+                    Lb1.insert(1, (v1.get() + " --> " + item[2].lower().strip() + " AI Matching % : " + str(similar(item[2].lower().strip(),matchname.lower().strip()) * 100)))
+
 
 w = tk.Label(root, text="Nick Name", bg="blue", fg="white")
 w.place(x = 20, y = 50, width=120, height=25)
@@ -74,9 +95,14 @@ w.place(x = 20, y = 200, width=120, height=25)
 w = tk.Label(root, text="Artificial Intelligence Suggestions", bg="red", fg="white")
 w.place(x = 20, y = 250, width=300, height=25)
 
+scrollbar = tk.Scrollbar(root)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
 Lb1 = tk.Listbox(root)
-Lb1.place(x = 20, y = 300, width=150, height=200)
+Lb1.place(x = 20, y = 300, width=400, height=200)
+
+Lb1.config(yscrollcommand=scrollbar.set)
+scrollbar.config(command=Lb1.yview)
 
 
 tk.mainloop()
